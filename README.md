@@ -200,5 +200,5 @@ caput SR00RPA01:STOP_ACQ_CMD 1
 
 
 =======
-# ASTeC_RedPitaya_EPICS
+# ASTeC_RedPitaya_EPICS this shit is dumb
 >>>>>>> 727c1f2e0c7342930c090a0f34475df70a6e2673
