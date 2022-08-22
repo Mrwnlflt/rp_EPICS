@@ -1,0 +1,16 @@
+# EPICS build generated direstories
+#
+O.*/
+bin/
+lib/
+include/
+db/
+dbd/
+
+# Eclipse generated directories and files
+#
+.cproject
+.project
+.settings/
+
+# end
