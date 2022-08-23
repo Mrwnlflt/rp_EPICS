@@ -1,0 +1,10 @@
+#!/bin/sh
+sleep 10
+systemctl stop redpitaya_nginx
+systemctl disable redpitaya_nginx 
+
+cd ~/redpitaya-epics/bin/linux-arm
+./load_fpga_image.sh
+cd ../../iocBoot/iocRedPitayaTest
+screen -dm -S ioc ./st.cmd 
+exit 0
