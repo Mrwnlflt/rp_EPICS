@@ -50,6 +50,8 @@ The previous command should have launched the IOC and displayed the IOC shell wh
 ```
 RP1:DIGITAL_<N,P><0...7>_DIR_CMD
 RP1:DIGITAL_<N,P><0...7>_STATE_CMD
+RP1:DIGITAL_<N,P><0...7>_DIR_STATUS
+RP1:DIGITAL_<N,P><0...7>_STATE_STATUS
 ```
 Where N and P represent the column and 0...7 represents pins 0 through 7 for each column. The DIR_CMD process variables allow you to set the direction of the pin as input or output, while the STATE_CMD process variables allow you to set the digital pins to Low or High corresponding to 0 or 3.3V. 
 
@@ -59,8 +61,57 @@ There are many options for interacting with the process variables, e.g. MEDM, CS
 caput RP1:DIGITAL_N3_DIR_CMD Output
 caput RP1:DIGITAL_N3_STATE_CMD High
 ```
+Alternatively, you can set pin P7 as an output with value of Low using:
+
+```
+caput RP1:DIGITAL_P7_DIR_CMD Output
+caput RP1:DIGITAL_P7_STATE_CMD Low
+```
+You can also retrieve the values of the pin direction and status using commands like:
+```
+caget RP1:DIGITAL_P7_DIR_STATUS
+caget RP1:DIGITAL_P7_STATE_STATUS
+```
+And continuously monitor a process variable with the command: 
+
+`camonitor RP1:DIGITAL_P2_DIR_STATUS`
+
 
 # Modifying the IOC
+
+The heart of the IOC is the database. The database contains all the records which correspond to the process variables. The database is produced by a template file which can be found in the directory $(TOP)/RedPitayaSup/Db/redpitaya_digital_pin.template and a substitution file found in the directory $(TOP)/RedPitayaTestApp/Db/Substitutions. The template file contains records such as 
+
+```
+record (bo, "$(DEVICE):DIGITAL_N$(PIN)_DIR_CMD") {
+   field (DESC, "Pin N$(PIN) direction command")
+   field (SCAN, ".1 second")
+   field (DTYP, "asynInt32")
+   field (OUT,  "@asyn($(PORT), $(PIN), 0) NDPDIR")
+   field (ZNAM, "Input")
+   field (ONAM, "Output")
+   field (VAL, "1")
+}
+```
+These records are fully configurable. You can modify the type (bo stands for binary output in the example above), the name ("$(DEVICE):DIGITAL_N$(PIN)_DIR_CMD" can be replaced with the desired name) and the description (edit the string attached to the DESC field). You can add and remove fields, or edit the values of the ones present. A full list of record fields, what they do and how to use them, can be found in the [Record Reference Manual](https://epics.anl.gov/base/R7-0/6-docs/RecordReference.html). For example, the SCAN field specifies the scanning period for periodic record scans or the scan type for non-periodic record scans; you can modify it to `field(SCAN, "passive")` for the record processing to be triggered by other records or channel access. `field (SCAN, ".1 second")` sets a periodic scan rate where the record processes every 0.1 seconds. A more comprehensive description of EPICS records is given in [EPICS Process Databse Concepts](https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#epics-process-database-concepts).
+
+Another important field to edit is `VAL`, which sets the initial value that the IOC boots up with. 
+$(DEVICE) - base pv name, $(PIN) - pin number, and $(PORT) - asyn portname, represent macros that allow the substitution of the variable with values defined in the substitutions files. That is: 
+
+```
+file "db/redpitaya_digital_pin.template"
+{
+   pattern  {DEVICE,    PORT, PIN}
+            {RP1, RP,   0  }
+            {RP1, RP,   1  }
+            {RP1, RP,   2  }
+            {RP1, RP,   3  }
+            {RP1, RP,   4  }
+            {RP1, RP,   5  }
+            {RP1, RP,   6  }
+            {RP1, RP,   7  }
+}
+```
+Substitutes the variables inside the template file, expanding to produce process variables for each row as defined by the pattern above. RP1 can be changed to edit the base pv name. 
 
 # Automatic booting of IOC
 
