@@ -53,7 +53,7 @@ RP1:DIGITAL_<N,P><0...7>_STATE_CMD
 ```
 Where N and P represent the column and 0...7 represents pins 0 through 7 for each column. The DIR_CMD process variables allow you to set the direction of the pin as input or output, while the STATE_CMD process variables allow you to set the digital pins to Low or High corresponding to 0 or 3.3V. 
 
-There are many options for interacting with the process variables, e.g. MEDM, CSS, caQtDm, PyEPICS, but the simplest is EPICS command line tools. In order to the set pin N3 as an output pin with a value of High, you can use the following commands:
+There are many options for interacting with the process variables, e.g. MEDM, CSS, caQtDm, PyEPICS, but the simplest is EPICS command line tools. In order to the set pin N3 as an output pin with a value of High, you can launch a new terminal (ctrl+alt+t) and use the following commands:
 
 ```
 caput RP1:DIGITAL_N3_DIR_CMD Output
