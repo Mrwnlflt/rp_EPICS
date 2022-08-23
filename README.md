@@ -1,202 +1,118 @@
-# redpitaya-epics
+# Introduction
 
-EPICS driver support for RedPitaya based on asynPortDriver. This module is to be run on the RP itself.
+This Red Pitaya driver support is a truncated version of the [Australian Synchrotron driver support](https://github.com/AustralianSynchrotron/redpitaya-epics), containing only the process variables for the digital pins. In order to obtain the full selection of process variables (analog pins, wave form generator, oscilloscope), install the Australia Synchrotron version instead. 
 
-## Getting Started
+# Installation
 
-It's really quite straight forward. Module consists of an EPICS support library and test application. All you need is:
-* [RedPitaya](https://www.redpitaya.com)
-* [EPICS Base](https://epics.anl.gov/download/base/index.php)
-* [asynDriver](https://epics.anl.gov/modules/soft/asyn/) 
+The Red Pitaya uses an ubuntu operating system and provides a command line interface which can be remotely connected to via ssh on linux, or putty on windows. Detailed instructions for establishing the remote connection can be found in the official [redpitaya documentation](https://redpitaya.readthedocs.io/en/latest/developerGuide/software/console/ssh/ssh.html). 
 
-### RedPitaya
-Code has been developed on and tested with [STEMLab 125-14](https://www.redpitaya.com/f130/STEMlab-board) (originally Red Pitaya v1.1) and RedPitaya library version 0.98-685-0759d71. RedPitaya library comes with the image you get on their website. To set it up, follow their [Quick start](http://redpitaya.readthedocs.io/en/latest/quickStart/quickStart.html) manual.
+Firstly, ensure that epics base and the asyn package are installed by following the official [installation documentation](https://docs.epics-controls.org/projects/how-tos/en/latest/getting-started/installation.html#:~:text=%20Installation%20on%20Linux%2FUNIX%2FDARWIN%20%28Mac%29%20%C2%B6%20%201,%28NAME%29%20works%20if%20it%20is%20defined...%20More%20). Due to the slow speed of compilation on the RedPitaya, it is advised that the packages are cross-compiled on a more powerful pc. Instructions are presented in the README.md file in the [Australian Synchrotron Github](https://github.com/AustralianSynchrotron/redpitaya-epics).
+With EPICS and asyn installed, the next step is to clone this github repository to a desired directory on your RedPitaya. For example, the directory used with the red ptiaya connected to the IP address 148.79.100.64, RP1, is the /root directory. The following command can be used to clone the github repository: 
 
-### EPICS Base
-There is nothing too funky in the code so I believe any EPICS Base > 3.14.12.2 should be fine but it has only been tested with 3.15.5 and 3.16.1.
+`git clone https://github.com/Mrwnlflt/rp_EPICS.git .`
 
-### asynDriver
-Same story as with EPICS Base, but it has only been tested with asynDriver 4.26 and 4.31.
+The next step is to edit the RELEASE file located inside the configure directory. The release file contains a user specified list of other directories containing the files needed by the current directory. The release file can be found in $(TOP)/configure/RELEASE where $(TOP) is installation directory. In the case of RP1, the top directory is /root/redpitaya-epics. The variables ASYN and EPICS_BASE inside the release file should be edited to include the install locations of asyn and epics-base for your device. For RP1, the RELEASE file looks as follows 
 
-## Deployment
-It takes quite some time to build EPICS Base and asynDriver on RedPitaya (and hour and 20 minutes for base) so I suggest you cross-compile the two. 
+```
+TEMPLATE_TOP=${EPICS_BASE}/templates/makeBaseApp/top
 
-### Prerequisites
-First you'll need build toolchain binaries for target architecture. RedPitaya is using Linaro's linux-arm-gnueabihf build toolchain so that's what you should get. I got mine from here: https://releases.linaro.org/components/toolchain/binaries/6.3-2017.02/arm-linux-gnueabihf/. Simply extract it to <arm\_compiler\_dir> and that's it.
+ASYN=/root/EPICS/support/asyn
 
-### Cross-compiling EPICS Base
-There are basically only 4 things you need to change to cross-compile EPICS base once you have your ARM compiler ready:
-* <base\_top>/configure/CONFIG_SITE:
-  * CROSS\_COMPILER\_TARGET\_ARCHS = linux-arm
-  * CROSS\_COMPILER\_HOST\_ARCHS = <your\_host\_arch>
-* <base\_top>/configure/os/CONFIG\_SITE.<your\_host\_arch>.linux-arm:
-  * GNU\_TARGET = arm-linux-gnueabihf
-  * GNU\_DIR = <arm\_compiler\_dir>
-  
-That should be it. Run make.
+# EPICS_BASE usually appears last so other apps can override stuff:
+EPICS_BASE=/root/EPICS/epics-base
+```
+Having completed this, change to the top directory of the driver support, e.g. `cd /root/redpitaya-epics` and run `make`. 
 
-### Cross-compiling Other EPICS Components
-For other components you want to cross-compile for RedPitaya you just have to make sure that they are being built against the EPICS base you have just built, or any other one that's cross compiled for RedPitaya, and set the target architecture:
-* <component\_top>/configure/CONFIG\_SITE:
-  * CROSS\_COMPILER\_TARGET\_ARCHS = linux-arm
+# Launching the IOC 
 
-### Building the Driver Itself
-After you have EPICS Base and asynDriver ready (cross-compiled or built on the board) it's time to build this driver. It's designed to be built on the board itself, so begin by copying it to RedPitaya. Once this is done, simply modify the $(TOP)/configure/RELEASE file of this module to point to where your EPICS Base and asynDriver are and hit make.
+Before launching the IOC, it's necessary to disable the nginx webserver from launching on startup using the commands 
 
-## Running the Test App
-
-### Stopping the Web Server
-By default RedPitaya starts the nginx web server on startup, which can be used to access applications via web browser. Before you start the IOC, make sure this service is turned off. If you don't want it to automatically start on startup, disable it.
 ```
 systemctl stop redpitaya_nginx
 systemctl disable redpitaya_nginx
 ```
 
-### Starting the IOC
-After a (hopefully) successful build, you'll end up with two files in your $(TOP)/bin/linux-arm directory. You have to load the FPGA image prior to running the IOC. To do that simply execute the $(TOP)/bin/linux-arm/load\_fpga\_image.sh script as root.
-When this is done you can start the IOC in the standard way by running $(TOP)/iocBoot/iocRedPitayaTest/st.cmd
-
-## Usage
-This paragraph assumes you're running the IOC from RedPitayaTestApp.
-
-Almost all records also have corresponding <record\_name>\_STATUS and <record\_name>\_MONITOR read records. E.g. SR00RPA01:ACQ\_TRIGGER\_SRC\_CMD has SR00RPA01:ACQ\_TRIGGER\_SRC\_STATUS counterpart and SR00RPA01:ACQ\_TRIGGER\_DELAY\_SP has SR00RPA01:ACQ\_TRIGGER\_DELAY\_MONITOR.
-
-### Data Acquisition
-
-**Data acquisition start/stop**
-
-| Record Name                               | Allowed Values  | Comment                                                                                              |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:START\_CONT\_ACQ\_CMD   | 1               | Start a continuous acquisition. After a trigger, the device will rearm and wait for another trigger. |
-| SR00RPA01:START\_SS\_ACQ\_CMD     | 1               | Start a single-shot acquisition. Record data after the fist trigger and then stop acquiring.         |
-| SR00RPA01:STOP\_ACQ\_CMD     | 1               | Stops the acquisition.         |
-| SR00RPA01:RESET\_ACQ\_CMD     | 1               | Resets all acquisition parameters (trigger source, trigger level, decimation, ...) and stops the acquisition. |
-
-**Data acquisition trigger**
-
-| Record Name                   | Allowed Values  | Comment                                                                                              |
-| ------------------------------| --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:ACQ\_TRIGGER\_SRC\_CMD   | DISABLED  </br> NOW </br> CH1\_PE </br> CH1\_NE </br> CH2\_PE </br> CH2\_NE </br> EXT\_PE </br> EXT\_NE </br> AWG\_PE </br> AWG\_NE |-> Trigger is disabled </br> -> Trigger triggered now (immediately) <br/> -> Trigger set to Channel 1 threshold positive edge </br> -> Trigger set to Channel 1 threshold negative edge </br> -> Trigger set to Channel 2 threshold positive edge </br> -> Trigger set to Channel 2 threshold negative edge </br> -> Trigger set to external trigger positive edge (DIO0\_P pin) </br> -> Trigger set to external trigger negative edge (DIO0\_P pin) </br> -> Trigger set to arbitrary wave generator application positive edge <br/> ->  Trigger set to arbitrary wave generator application negative edge |
-| SR00RPA01:ACQ\_TRIGGER\_DELAY\_SP     | 0 <= *nanos* <= 10000 | Start with the acquisition *nanos* nanoseconds after the triggger.  |
-| SR00RPA01:ACQ\_TRIGGER\_LEVEL\_SP     | -20 <= *level* <= 20  | When trigger is set to one if the two channels, trigger when the volate crosses *level* volts. |
-| SR00RPA01:ACQ\_TRIGGER\_HYST\_SP     | 0 <= *hyst* <= 1  | Trigger hysteresis in volts. |
-
-**Data acquisitions configuration**
-
-| Record Name                               | Allowed Values  | Comment                                                                                              |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:ACQ\_DECIMATION\_CMD | 1, 8, 64, 1024, 8192, 65536 | Input data decimation values |
-| SR00RPA01:ACQ\_SAMPLING\_RATE\_CMD | 125 MHz, 15.6 MHz, 1.9 MHz, 103.8 kHz, 15.2 kHz, 1.9 kHz | Rate at which we're sampling. |
-| SR00RPA01:ACQ\_AVERAGING\_CMD | Off, On | Enable or disable averaging |
-
-**Data acquisition per-channel configuration**
-
-| Record Name                               | Allowed Values  | Comment                                                                                              |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:IN<1,2>\_GAIN\_CMD | Low, High | Sets the acquire gain state for channel 1 or 2. The gain should be set to the same value as it is set on the RedPitaya hardware by the LV/HV gain jumpers. Low = LV = 1V; High = HV = 20V. |
-
-**Data reading:**
-
-| Record Name                               | Comment                                                                                              |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:IN<1,2>\_DATA\_MONITOR | Read the data acquired on channel 1 or 2. |
-
-
-#### Examples
-
-Use external trigger's positive edge to continuously acquire every 1024th data point:
-```
-# External positive edge trigger
-caput SR00RPA01:ACQ_TRIGGER_SRC_CMD EXT_PE
-
-# Every 1024th point
-caput SR00RPA01:ACQ_DECIMATION_CMD 1024
-
-# Start acquisition
-caput SR00RPA01:START_CONT_ACQ_CMD 1
-
-# Plot the data somehow by reading the waveform from 
-camonitor SR00RPA01:IN1_DATA_MONITOR
-
-# Stop acquisition
-caput SR00RPA01:STOP_ACQ_CMD 1
- 
-```
-
-Manually trigger and rearm after each trigger.:
-```
-# Reset acquisition config. This sets trigger source to DISABLED
-caput SR00RPA01:RESET_ACQ_CMD 1
-
-# Start continuous acquisition 
-caput SR00RPA01:START_CONT_ACQ_CMD 1
-
-# Manually fire off a soft internal trigger
-caput SR00RPA01:ACQ_TRIGGER_SRC_CMD NOW
-
-# Plot the data somehow by reading the waveform 
-caget SR00RPA01:IN1_DATA_MONITOR
-
-# Stop acquisition
-caput SR00RPA01:STOP_ACQ_CMD 1
+Following this, the FPGA must be loaded before the IOC can be run. Assuming the package was built successfully, two files should be present in the `$(TOP)/bin/linux-arm` directory. Execute the load_fpga_image.sh file as root to load the fpga image. It may be necessary to change the permissions of the file to make it executable. 
 
 ```
-### Data Generation
+chmod u+x load_fpga_image.sh 
+sudo ./load_fpga_image.sh
+```
+You can now run the IOC by changing to the $(TOP)/iocBoot/iocRedPitayaTest directory and executing the st.cmd script. Again, it may be necessary to change permissions to executable.
 
-**Output enable/disable**
+```
+chmod u+x st.cmd 
+sudo ./st.cmd
+```
+# Using the IOC
 
-| Record Name                               | Allowed Values  | Comment                                                                                              |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:OUT<1,2>\_ENABLE\_CMD | Enable, Disable | Enable/disable output channel 1 or 2. |
-| SR00RPA01:OUT\_RESET\_CMD | 1 | Reset data generation configuration. |
+The previous command should have launched the IOC and displayed the IOC shell which can be interacted with. Begin by typing the command `help` for a list of available commands. The `dbl` command provides a full list of process variables avaiable with the IOC. The process variables in this redpitaya-epics IOC follow the template 
+```
+RP1:DIGITAL_<N,P><0...7>_DIR_CMD
+RP1:DIGITAL_<N,P><0...7>_STATE_CMD
+RP1:DIGITAL_<N,P><0...7>_DIR_STATUS
+RP1:DIGITAL_<N,P><0...7>_STATE_STATUS
+```
+Where N and P represent the column and 0...7 represents pins 0 through 7 for each column. The DIR_CMD process variables allow you to set the direction of the pin as input or output, while the STATE_CMD process variables allow you to set the digital pins to Low or High corresponding to 0 or 3.3V. 
 
-**Output trigger**
+There are many options for interacting with the process variables, e.g. MEDM, CSS, caQtDm, PyEPICS, but the simplest is EPICS command line tools. In order to the set pin N3 as an output pin with a value of High, you can launch a new terminal (ctrl+alt+t) and use the following commands:
 
-| Record Name                               | Allowed Values  | Comment                                                                                              |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:OUT\_SS\_CHANNEL\_CMD | Channel 1, Channel 2, Both Channels | Which output channel should be triggered with a single shot trigger. |
-| SR00RPA01:OUT\_SS\_TRIGGER\_CMD | 1 | Trigger single shot on selected output channels. |
-| SR00RPA01:OUT<1,2>\_TRIGGER\_SRC\_CMD | Internal, EXT_PE, EXT_NE, Gated Burst | Select a trigger for output channel 1 or 2. |
+```
+caput RP1:DIGITAL_N3_DIR_CMD Output
+caput RP1:DIGITAL_N3_STATE_CMD High
+```
+Alternatively, you can set pin P7 as an output with value of Low using:
 
-**Signal generation**
+```
+caput RP1:DIGITAL_P7_DIR_CMD Output
+caput RP1:DIGITAL_P7_STATE_CMD Low
+```
+You can also retrieve the values of the pin direction and status using commands like:
+```
+caget RP1:DIGITAL_P7_DIR_STATUS
+caget RP1:DIGITAL_P7_STATE_STATUS
+```
+And continuously monitor a process variable with the command: 
 
-| Record Name                               | Allowed Values  | Comment                                                                                              |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:OUT<1,2>\_WAVEFORM\_TYPE\_CMD | Sine, Square, Triangle, Ramp Up, Ramp Down, DC, PWM, Arbitrary | Generated signal waveform type for output channel 1 or 2.
-| SR00RPA01:OUT<1,2>\_AMP\_SP | 0 <= *amplitude* <= 1 | Generated signal amplitude in V.
-| SR00RPA01:OUT<1,2>\_OFFSET\_SP | -1 <= *offset* <= 1 | Generated signal DC offset in V.
-| SR00RPA01:OUT<1,2>\_FREQ\_SP | 0 <= *frequency* <= 62.5E6 | Signal frequency in Hz.
-| SR00RPA01:OUT<1,2>\_PHASE\_SP | 0 <= *phase* <= 360 | Signal phase in degrees.
-| SR00RPA01:OUT<1,2>\_DUTY\_CYCLE\_SP | 0 <= *duty cycle* <= 100 | If PWM waveform type is selected this is a duty cycle in percentage.
-| SR00RPA01:OUT<1,2>\_GEN\_MODE\_CMD | Continuous, Burst | Waveform generation mode.
-| SR00RPA01:OUT<1,2>\_BURST\_COUNT\_SP | -1 <= count <= 50000 | Number of generated waveforms in a burst. If -1 a continuous signal will be generated.
-| SR00RPA01:OUT<1,2>\_BURST\_REPS\_SP | -1 <= repetitions <= 50000 | Number of generated bursts. If -1, infinite bursts will be generated.
-| SR00RPA01:OUT<1,2>\_BURST\_PERIOD\_SP | 1 <= period <= 500000000 | Time/period of one burst in micro seconds. Period must be equal or greater then the time of one burst. If it is greater than the difference will be the delay between two consequential bursts.
-| SR00RPA01:OUT<1,2>\_DATA\_SP | A waveform of [-1.1, 1.1] | Arbitrary waveform containing 16354 elements.
-
-
-### Analog and Digital Pins
-
-**Digital pins**
-
-| Record Name                               | Allowed Values  | Comment                                                                                              |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:DIGITAL\_<N,P><0...7>\_DIR\_CMD | Input, Output | Direction of the digital pin. |
-| SR00RPA01:DIGITAL\_<N,P><0...7>\_STATE\_CMD | Low, High | State of the digital pin. |
-
-**LEDs** 
-
-| Record Name                               | Allowed Values  | Comment                                                                                              |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:LED<0...7>\_STATE\_CMD | Off, On | State of the LED. |
-
-**Analog pins**
-
-| Record Name                               | Allowed Values  | Comment                                                                                              |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------  |
-| SR00RPA01:ANALOG\_OUT<0...3>\_VOLT\_SP  | 0 <= *output* <= 1.8 | Set the voltage on anaglog pin to *output* volts. |
-| SR00RPA01:ANALOG\_IN<0...3>\_VOLT\_MONITOR  | 0 <= *input* <= 3.3  | Read the voltage on input analog pin. | 
+`camonitor RP1:DIGITAL_P2_DIR_STATUS`
 
 
-=======
-# ASTeC_RedPitaya_EPICS
+# Modifying the IOC
+
+The heart of the IOC is the database. The database contains all the records which correspond to the process variables. The database is produced by a template file which can be found in the directory $(TOP)/RedPitayaSup/Db/redpitaya_digital_pin.template and a substitution file found in the directory $(TOP)/RedPitayaTestApp/Db/Substitutions. The template file contains records such as 
+
+```
+record (bo, "$(DEVICE):DIGITAL_N$(PIN)_DIR_CMD") {
+   field (DESC, "Pin N$(PIN) direction command")
+   field (SCAN, ".1 second")
+   field (DTYP, "asynInt32")
+   field (OUT,  "@asyn($(PORT), $(PIN), 0) NDPDIR")
+   field (ZNAM, "Input")
+   field (ONAM, "Output")
+   field (VAL, "1")
+}
+```
+These records are fully configurable. You can modify the type (bo stands for binary output in the example above), the name ("$(DEVICE):DIGITAL_N$(PIN)_DIR_CMD" can be replaced with the desired name) and the description (edit the string attached to the DESC field). You can add and remove fields, or edit the values of the ones present. A full list of record fields, what they do and how to use them, can be found in the [Record Reference Manual](https://epics.anl.gov/base/R7-0/6-docs/RecordReference.html). For example, the SCAN field specifies the scanning period for periodic record scans or the scan type for non-periodic record scans; you can modify it to `field(SCAN, "passive")` for the record processing to be triggered by other records or channel access. `field (SCAN, ".1 second")` sets a periodic scan rate where the record processes every 0.1 seconds. A more comprehensive description of EPICS records is given in [EPICS Process Databse Concepts](https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#epics-process-database-concepts).
+
+Another important field to edit is `VAL`, which sets the initial value that the IOC boots up with. 
+$(DEVICE) - base pv name, $(PIN) - pin number, and $(PORT) - asyn portname, represent macros that allow the substitution of the variable with values defined in the substitutions files. That is: 
+
+```
+file "db/redpitaya_digital_pin.template"
+{
+   pattern  {DEVICE,    PORT, PIN}
+            {RP1, RP,   0  }
+            {RP1, RP,   1  }
+            {RP1, RP,   2  }
+            {RP1, RP,   3  }
+            {RP1, RP,   4  }
+            {RP1, RP,   5  }
+            {RP1, RP,   6  }
+            {RP1, RP,   7  }
+}
+```
+Substitutes the variables inside the template file, expanding to produce process variables for each row as defined by the pattern above. RP1 can be changed to edit the base pv name. 
+
+# Automatic booting of IOC
+
+# Test Program 
