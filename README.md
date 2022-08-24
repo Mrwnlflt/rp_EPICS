@@ -113,6 +113,68 @@ file "db/redpitaya_digital_pin.template"
 ```
 Substitutes the variables inside the template file, expanding to produce process variables for each row as defined by the pattern above. RP1 can be changed to edit the base pv name. 
 
+Some additional process variables were included to simplify the client/server interface for controlling the digital output pins. 
+```
+record (ao, "attenuator") {
+   field (DESC, "Attentuation level process variable")
+   field (SCAN, ".1 second")
+   field (VAL , "0")
+   field (DRVL, "0")
+   field (DRVH, "22")
+   field (PINI, "YES")
+}
+record(calc,"attenconv") {
+    field(CALC,"A<=14?A/2:A/2+4")
+    field(SCAN,".1 second")
+    field(INPA,"attenuator.VAL NPP NMS")
+}
+record(calc,"A") {
+    field(CALC,"A&1")
+    field(SCAN,".1 second")
+    field(INPA,"attenconv.VAL NPP NMS")
+}
+record(calc,"B") {
+    field(CALC,"(A>>>1)&1")
+    field(SCAN,".1 second")
+    field(INPA,"attenconv.VAL NPP NMS")
+}
+record(calc,"C") {
+    field(CALC,"(A>>>2)&1")
+    field(SCAN,".1 second")
+    field(INPA,"attenconv.VAL NPP NMS")
+}
+record(calc,"D") {
+    field(CALC,"(A>>>3)&1")
+    field(SCAN,".1 second")
+    field(INPA,"attenconv.VAL NPP NMS")
+}
+
+
+record (seq, "attenout") {
+   field (DESC, "Output bus for attenuation")
+   field (SCAN, ".1 second")
+   field (PINI, "YES")
+   field (DOL0, "A")
+   field (DOL1, "B")
+   field (DOL2, "C")
+   field (DOL3, "D")
+   field (LNK0, "$(DEVICE):DIGITAL_N0_STATE_CMD")
+   field (LNK1, "$(DEVICE):DIGITAL_N1_STATE_CMD")
+   field (LNK2, "$(DEVICE):DIGITAL_N2_STATE_CMD")
+   field (LNK3, "$(DEVICE):DIGITAL_N3_STATE_CMD")
+   field (SELM, "All")
+}
+```
+
 # Automatic booting of IOC
 
+The shell script `rpstartup` provides an automated method for launching the IOC in a screen terminal on RedPitaya startup. The `rc.online` file in the `/etc` directory should be modified to include the following line of code:
+
+`/bin/bash /root/redpitaya-epics/rpstartup`
+
+where `/root/redpitaya-epics` should be changed to the directory that stores the rpstartup script. 
+
+Additionally, it may be necessary to run the command `systemctl start rc-online.service`. 
+
 # Test Program 
+
