@@ -113,7 +113,7 @@ file "db/redpitaya_digital_pin.template"
 ```
 Substitutes the variables inside the template file, expanding to produce process variables for each row as defined by the pattern above. RP1 can be changed to edit the base pv name. 
 
-Some additional process variables were included to simplify the client/server interface for controlling the digital output pins. 
+Some additional process variables were included to simplify the client/server interface for controlling the digital output pins:
 ```
 record (ao, "attenuator") {
    field (DESC, "Attentuation level process variable")
@@ -165,6 +165,8 @@ record (seq, "attenout") {
    field (SELM, "All")
 }
 ```
+The attenuator record provides the process variable which is the main interface between the requested attenuation level and the digital output pins configuration to produce the desired attenuation level on the adrf5740. The attenconv record converts the value stored in the attenuation record to produce the ![truth tbale](https://user-images.githubusercontent.com/77744034/186387800-895e3d99-b465-4917-903b-9be7f6a9b1e8.PNG) equivalent, according to the attenuator datasheet.
+  
 
 # Automatic booting of IOC
 
@@ -177,4 +179,8 @@ where `/root/redpitaya-epics` should be changed to the directory that stores the
 Additionally, it may be necessary to run the command `systemctl start rc-online.service`. 
 
 # Test Program 
+
+Test programs are provided in the `program` directory. The AutoMeasure.ipynb is a jupyter notebook file and requires the installation of jupyter notebook. Follow the instructions on the [official website](https://jupyter.org/install). The program requires the installation of ni-visa for SCPI communication with the signal generator in order to automate the control of the signal generator. Link for download cna be found [here](https://www.ni.com/en-gb/support/downloads/drivers/download.ni-visa.html#460385). The program also requires the installation of [pyvisa](https://pyvisa.readthedocs.io/en/latest/introduction/getting.html) to allow python written code to interact with the protocol. The link provides instructions on how to use pyvisa. Additionally, using EPICS requires the installation of [pyepics](https://pypi.org/project/pyepics/). 
+
+The basic requirements for the project are writing to the process variables and reading from the process variables, which can be accomplished using `epics.caput()` and `epics.caget()` respectively. The additional functionality presented in the programs is to automate an experiment to calibrate the RF circuit by measuring the votlage using the red pitaya fast analog input for given frequencies and powers. 
 
