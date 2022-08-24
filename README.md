@@ -165,8 +165,69 @@ record (seq, "attenout") {
    field (SELM, "All")
 }
 ```
-The attenuator record provides the process variable which is the main interface between the requested attenuation level and the digital output pins configuration to produce the desired attenuation level on the adrf5740. The attenconv record converts the value stored in the attenuation record to produce the ![truth tbale](https://user-images.githubusercontent.com/77744034/186387800-895e3d99-b465-4917-903b-9be7f6a9b1e8.PNG) equivalent, according to the attenuator datasheet.
+The attenuator record provides the process variable which is the main interface between the requested attenuation level and the digital output pins configuration to produce the desired attenuation level on the adrf5740. The attenconv record converts the value stored in the attenuation record to produce the truth table equivalent, according to the attenuator datasheet.
+
+![truth tbale](https://user-images.githubusercontent.com/77744034/186387800-895e3d99-b465-4917-903b-9be7f6a9b1e8.PNG)
+
+From this converted value, the columns of the binary representation of the decimal value are extracted using bitwise arithmetic in the A, B, C and D calc records. These columns correspond to the required digital outputs to produce the attenuation levels. Finally, the attenout record of type seq is used to link the required digital output pins with the A, B, C and D records, effectively producing an parallel bus from a serial input. 
   
+# Expanding to more channels 
+
+Expanding to more channels is a simple procedure. All that's required is creating some additional records similar to the one above, e.g.:
+
+```
+record (ao, "attenuator2") {
+   field (DESC, "Attentuation level process variable")
+   field (SCAN, ".1 second")
+   field (VAL , "0")
+   field (DRVL, "0")
+   field (DRVH, "22")
+   field (PINI, "YES")
+}
+record(calc,"attenconv2") {
+    field(CALC,"A<=14?A/2:A/2+4")
+    field(SCAN,".1 second")
+    field(INPA,"attenuator.VAL NPP NMS")
+}
+record(calc,"A2") {
+    field(CALC,"A&1")
+    field(SCAN,".1 second")
+    field(INPA,"attenconv2.VAL NPP NMS")
+}
+record(calc,"B2") {
+    field(CALC,"(A>>>1)&1")
+    field(SCAN,".1 second")
+    field(INPA,"attenconv2.VAL NPP NMS")
+}
+record(calc,"C2") {
+    field(CALC,"(A>>>2)&1")
+    field(SCAN,".1 second")
+    field(INPA,"attenconv2.VAL NPP NMS")
+}
+record(calc,"D2") {
+    field(CALC,"(A>>>3)&1")
+    field(SCAN,".1 second")
+    field(INPA,"attenconv2.VAL NPP NMS")
+}
+
+
+record (seq, "attenout2") {
+   field (DESC, "Output bus for attenuation")
+   field (SCAN, ".1 second")
+   field (PINI, "YES")
+   field (DOL0, "A2")
+   field (DOL1, "B2")
+   field (DOL2, "C2")
+   field (DOL3, "D2")
+   field (LNK0, "$(DEVICE):DIGITAL_P0_STATE_CMD")
+   field (LNK1, "$(DEVICE):DIGITAL_P1_STATE_CMD")
+   field (LNK2, "$(DEVICE):DIGITAL_P2_STATE_CMD")
+   field (LNK3, "$(DEVICE):DIGITAL_P3_STATE_CMD")
+   field (SELM, "All")
+}
+```
+
+Where separate process variables are created for the 2nd, 3rd ... nth channel, and the digital pins in the P column are used instead. 
 
 # Automatic booting of IOC
 
