@@ -96,7 +96,7 @@ def incAtt():
     for i in range(12):
         setAtt(2*i) #set attenuation
         time.sleep(1.5) #wait for epics 
-        ai=epics.caget("SR00RPA01:IN1_DATA_MONITOR") #read the analog input values 
+        ai=epics.caget("RP1:IN1_DATA_MONITOR") #read the analog input values 
         time.sleep(1.5) #wait for epics
         ai = numpy.mean(ai) #take the mean of the array 
         readStat()
@@ -112,8 +112,8 @@ def readStat():
     print('Power = ' + b + '   Frequency = ' + a + '    Attenuation = ' + c + '     Voltage = ' + d)
 
 #set up fast analog input
-epics.caput('SR00RPA01:IN1_GAIN_CMD', 'Low')
-epics.caput('SR00RPA01:ACQ_TRIGGER_SRC_CMD', 'DISABLED')
+epics.caput('RP1:IN1_GAIN_CMD', 'Low')
+epics.caput('RP1:ACQ_TRIGGER_SRC_CMD', 'DISABLED')
 
 #set up connection to signal generator
 rm = pyvisa.ResourceManager()
@@ -125,22 +125,22 @@ if (inst.query('*IDN?')!='ANRITSU,MG3692C,211201,3.62\r\n'):
 
 #initialise pins as outputs
 for i in range(6):
-                epics.caput('SR00RPA01:DIGITAL_N'+str(i)+'_DIR_CMD', 'Output')
+                epics.caput('RP1:DIGITAL_N'+str(i)+'_DIR_CMD', 'Output')
 
 #initialise Latch Enable to high
-epics.caput('SR00RPA01:DIGITAL_N4_STATE_CMD', 'High')
+epics.caput('RP1:DIGITAL_N4_STATE_CMD', 'High')
 
 
 #function to set attenuation
 def setAtt(attenVal):
-    epics.caput('car', attenVal)
+    epics.caput('attenuation', attenVal)
 
 #select switch function
 def setSwitch(switchVal):
     if switchVal == 0:
-        epics.caput('SR00RPA01:DIGITAL_N5_STATE_CMD','Low' )
+        epics.caput('RP1:DIGITAL_N5_STATE_CMD','Low' )
     elif switchVal == 1:
-        epics.caput('SR00RPA01:DIGITAL_N5_STATE_CMD','High' )
+        epics.caput('RP1:DIGITAL_N5_STATE_CMD','High' )
 
 #initialise the switch and attenuation to a known value        
 setSwitch(0)
@@ -150,7 +150,7 @@ setAtt(0)
 initPnF()
 
 #start the fast analog in acquisition
-epics.caput('SR00RPA01:START_CONT_ACQ_CMD', '1')
+epics.caput('RP1:START_CONT_ACQ_CMD', '1')
 #open a text file in write mode
 f = open("autoconfig.txt", "w")
 
