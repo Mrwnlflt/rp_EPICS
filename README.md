@@ -245,3 +245,6 @@ Test programs are provided in the `program` directory. The AutoMeasure.ipynb is 
 
 The basic requirements for the project are writing to the process variables and reading from the process variables, which can be accomplished using `epics.caput()` and `epics.caget()` respectively. The additional functionality presented in the programs is to automate an experiment to calibrate the RF circuit by measuring the votlage using the red pitaya fast analog input for given frequencies and powers. 
 
+# Pin Configuration
+
+As it stands, the pins N0-N3 are used to the digital control pins of the attenuator and N5 is used for the digital control pin of the switch. This choice is entirely arbitrary and can be modified in the programs, and correspondingly in the records. In order to expand it to the additional back-end switch, you can use the remaining pins N4, N6, N7. All that's required is writing code (or css, caqtdm) that uses the process variable `$(DEVICE):DIGITAL_N<4,6,7>_STATE_CMD` 
