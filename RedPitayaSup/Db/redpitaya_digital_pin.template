@@ -99,6 +99,7 @@ record (bo, "$(DEVICE):DIGITAL_N$(PIN)_STATE_CMD") {
    field (ZNAM, "Low")
    field (ONAM, "High")
    field (DISV, "0")
+   field (VAL, "1")
    # If the this is an input pin, the state can't be set
    # therefore the record is disabled in this case and set to
    # INVALID, if the user wants to set it.
@@ -148,35 +149,48 @@ record (bi, "$(DEVICE):DIGITAL_P$(PIN)_STATE_STATUS") {
    field (ZNAM, "Low")
    field (ONAM, "High")
 }
-record (ao, "attenuator") {
+record (longout, "attenuator") {
    field (DESC, "Attentuation level process variable")
    field (SCAN, ".1 second")
-   field (VAL , "0")
+   field (VAL , "22")
    field (DRVL, "0")
    field (DRVH, "22")
+   field (HIHI, "22")
+   field (HHSV, "MAJOR")
    field (PINI, "YES")
 }
-record(calc,"attenconv") {
-    field(CALC,"A<=14?A/2:A/2+4")
+record(calcout,"attenconv") {
+    field(CALC,"A%2=0?(A<=14?A/2:A/2+4):22")
     field(SCAN,".1 second")
     field(INPA,"attenuator.VAL NPP NMS")
 }
+record(calcout,"attenint"){
+    field(CALC,"A<=7?A*2:(A-4)*2")
+    field(SCAN, ".1 second")
+    field(INPA,"attenconv.VAL NPP NMS")
+    field(OUT , "attenuator NPP")
+
+}
 record(calc,"A") {
+    field (VAL , "1")
     field(CALC,"A&1")
     field(SCAN,".1 second")
     field(INPA,"attenconv.VAL NPP NMS")
 }
 record(calc,"B") {
+    field (VAL , "1")
     field(CALC,"(A>>>1)&1")
     field(SCAN,".1 second")
     field(INPA,"attenconv.VAL NPP NMS")
 }
 record(calc,"C") {
+    field (VAL , "1")
     field(CALC,"(A>>>2)&1")
     field(SCAN,".1 second")
     field(INPA,"attenconv.VAL NPP NMS")
 }
 record(calc,"D") {
+    field (VAL , "1")
     field(CALC,"(A>>>3)&1")
     field(SCAN,".1 second")
     field(INPA,"attenconv.VAL NPP NMS")

@@ -1,0 +1,4 @@
+epicsEnvSet("IOC","iocRedPitayaTest")
+epicsEnvSet("TOP","/root/rp_EPICS")
+epicsEnvSet("ASYN","/root/EPICS/support/asyn")
+epicsEnvSet("EPICS_BASE","/root/EPICS/epics-base")
