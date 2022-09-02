@@ -231,13 +231,13 @@ Where separate process variables are created for the 2nd, 3rd ... nth channel, a
 
 # Automatic booting of IOC
 
-The shell script `rpstartup` provides an automated method for launching the IOC in a screen terminal on RedPitaya startup. The `rc.online` file in the `/etc` directory should be modified to include the following line of code:
+The shell script `rpstartup` provides an automated method for launching the IOC in a screen terminal on RedPitaya startup. The `rc.local` file in the `/etc` directory should be modified to include the following line of code:
 
 `/bin/bash /root/redpitaya-epics/rpstartup`
 
 where `/root/redpitaya-epics` should be changed to the directory that stores the rpstartup script. 
 
-Additionally, it may be necessary to run the command `systemctl start rc-online.service`. 
+Additionally, it may be necessary to run the command `systemctl start rc-local.service`. 
 
 # Test Program 
 
